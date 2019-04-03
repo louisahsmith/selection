@@ -9,8 +9,8 @@ if (length(args) == 0) {
 
 print(paste("Listening on port", port))
 
-# shiny::runApp(
-#   appDir = getwd(),
-#   host = "127.0.0.1",
-#   port = as.numeric(port)
-# )
+shiny::runApp(
+  appDir = getwd(),
+  host = "127.0.0.1",
+  port = as.numeric(port)
+)
