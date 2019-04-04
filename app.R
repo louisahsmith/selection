@@ -1,3 +1,4 @@
+install.packages("EValue")
 library(shiny)
 library(EValue)
 library(shinythemes)
