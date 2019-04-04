@@ -1,3 +1,5 @@
+packrat::on()
+
 library(shiny)
 library(EValue)
 library(shinythemes)
