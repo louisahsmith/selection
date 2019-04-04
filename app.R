@@ -1,4 +1,4 @@
-packrat::on()
+.libPaths("/packrat/lib/x86_64-pc-linux-gnu/3.4.3/")
 
 library(shiny)
 library(EValue)
