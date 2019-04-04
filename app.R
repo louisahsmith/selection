@@ -1,6 +1,5 @@
-install.packages('packrat', repos='http://cran.us.r-project.org')
-packrat::on()
-
+.libPaths("/usr/local/lib/R/site-library/00LOCK-packrat")
+.libPaths()
 library(shiny)
 library(EValue)
 library(shinythemes)
