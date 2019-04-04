@@ -8,7 +8,8 @@ if (length(args) == 0) {
 }
 
 print(paste("Listening on port", port))
-print(.libPaths())
+
+packrat::on()
 
 shiny::runApp(
   appDir = getwd(),
