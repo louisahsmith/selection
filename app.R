@@ -1,4 +1,5 @@
-.libPaths("/packrat/lib/x86_64-pc-linux-gnu/3.4.3/")
+install.packages('packrat', repos='http://cran.us.r-project.org')
+packrat::on()
 
 library(shiny)
 library(EValue)
