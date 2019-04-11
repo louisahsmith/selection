@@ -212,8 +212,8 @@ Requires: colorspace
 
 Package: mvtnorm
 Source: CRAN
-Version: 1.0-10
-Hash: 347e9b56bd09c51377966644696be273
+Version: 1.0-6
+Hash: 61cde057f5b2c298bcd96f6dce1657afaf957c04
 
 Package: nlme
 Source: CRAN
