@@ -66,19 +66,73 @@ ui <- navbarPage(
     )
   ),
   tabPanel(
-    "E-values for selection bias",
+    "Compute bound",
     mainPanel(
-      selectInput("outcomeType_S",
+      selectInput("outcomeType_B",
         label = "Outcome type",
         choices = c(
           "Risk / rate ratio" = "RR",
-          "Odds ratio" = "OR",
-          "Hazard ratio" = "HR"
+          "Risk / rate difference" = "RD"
         )
       ),
+      checkboxGroupInput(
+        "assump_B", "Additional assumptions (see linked article for details):",
+        c(
+          "Inference only in selected population" = "sel_pop",
+          "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
+          "Selection associated with increased risk of outcome" = "risk_inc",
+          "Selection associated with decreased risk of outcome" = "risk_dec"
+        )
+      ),
+      # conditionalPanel(
+      #     condition = "input.outcomeType_S != 'RR' ",
+      #     checkboxInput("rare", "Outcome prevalence <15%", TRUE)
+      # ),
       conditionalPanel(
-          condition = "input.outcomeType_S != 'RR' ",
-          checkboxInput("rare", "Outcome prevalence <15%", TRUE)
+        condition = "input.outcomeType_B == 'RD'",
+        numericInput("pY_S1_A1", "Risk in selected exposed: P(Y = 1 | A = 1, S = 1)", value = NA, min = 0, max = 1, step = 0.1)
+      ),
+      conditionalPanel(
+        condition = "input.outcomeType_B == 'RD'",
+        numericInput("pY_S1_A0", "Risk in selected unexposed: P(Y = 1 | A = 0, S = 1)", value = NA, min = 0, max = 1, step = 0.1)
+      ),
+      
+      
+      # display results
+      wellPanel(span(textOutput(("result.text_B")))),
+      uiOutput("message.text_B"),
+      width = 6
+    ), # ends mainPanel
+    # panel for info
+    sidebarPanel(
+      wellPanel(HTML(paste("<b>Computing an E-value for selection bias</b>",
+        "Like the E-value for unmeasured confounding, the selection bias E-value describes 
+                                              the minimum strength of association between several (possibly unmeasured) factors that would be 
+                                              sufficient to have created enough selection bias to explain away an observed exposure-outcome association.
+                                              The parameters that the E-value refers to depends on what assumptions an investigator is willing to make,
+                                              and are printed with the results. See the cited article for exact definitions and for more details.",
+        "<b>Please use the following citation:</b>",
+        "Smith LH & VanderWeele TJ. (2019). Bounding bias due to selection. 
+                                             <i>Epidemiology</i>, forthcoming. <a href='https://arxiv.org/abs/1810.13402'>(Pre-print available).</a>",
+        sep = "<br/><br/>"
+      ))),
+      width = 6
+    ) # end explanation sidebar
+  ), # end selection bias panel
+  tabPanel(
+    "E-values for selection bias",
+    mainPanel(
+      selectInput("outcomeType_S",
+                  label = "Outcome type",
+                  choices = c(
+                    "Risk / rate ratio" = "RR",
+                    "Odds ratio" = "OR",
+                    "Hazard ratio" = "HR"
+                  )
+      ),
+      conditionalPanel(
+        condition = "input.outcomeType_S != 'RR' ",
+        checkboxInput("rare", "Outcome prevalence <15%", TRUE)
       ),
       numericInput("est_S", "Point estimate", NA, min = 0),
       numericInput("lo_S", "Confidence interval lower limit", NA, min = 0),
@@ -106,15 +160,15 @@ ui <- navbarPage(
     # panel for info
     sidebarPanel(
       wellPanel(HTML(paste("<b>Computing an E-value for selection bias</b>",
-        "Like the E-value for unmeasured confounding, the selection bias E-value describes 
+                           "Like the E-value for unmeasured confounding, the selection bias E-value describes 
                                               the minimum strength of association between several (possibly unmeasured) factors that would be 
                                               sufficient to have created enough selection bias to explain away an observed exposure-outcome association.
                                               The parameters that the E-value refers to depends on what assumptions an investigator is willing to make,
                                               and are printed with the results. See the cited article for exact definitions and for more details.",
-        "<b>Please use the following citation:</b>",
-        "Smith LH & VanderWeele TJ. (2019). Bounding bias due to selection. 
+                           "<b>Please use the following citation:</b>",
+                           "Smith LH & VanderWeele TJ. (2019). Bounding bias due to selection. 
                                              <i>Epidemiology</i>, forthcoming. <a href='https://arxiv.org/abs/1810.13402'>(Pre-print available).</a>",
-        sep = "<br/><br/>"
+                           sep = "<br/><br/>"
       ))),
       width = 6
     ) # end explanation sidebar
