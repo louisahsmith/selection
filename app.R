@@ -1,7 +1,8 @@
 library(shiny)
 library(shinythemes)
 library(EValue)
-
+# todo: make "this value refers to" text only show up if something is inputted
+# make sure right-side panels are the same width and why are they in a frame???
 options(shiny.sanitize.errors = FALSE)
 
 # message to display if non-null true value
@@ -11,14 +12,21 @@ nonnull.mess <- 'Note: You are calculating a "non-null" selection bias value, i.
 
 # Define UI for application that draws a histogram
 ui <- navbarPage(
+  title = "Bounding bias due to selection",          
+  id = "navbar",
+  theme = shinytheme("yeti"),
+  tabPanel(
+    "Selection Bias",
+    tags$script(src = "keep_alive.js"),
     tags$head(
-        tags$link(rel="stylesheet", 
-                  href="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.min.css", 
-                  integrity="sha384-dbVIfZGuN1Yq7/1Ocstc1lUEm+AT+/rCkibIcC/OmWo5f0EA48Vf8CytHzGrSwbQ",
-                  crossorigin="anonymous"),
-        HTML('<script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.min.js" integrity="sha384-2BKqo+exmr9su6dir+qCw08N2ZKRucY4PrGQPPWU1A7FtlCGjmEGFqXCv5nyM5Ij" crossorigin="anonymous"></script>'),
-        HTML('<script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"></script>'),
-        HTML('
+      tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
+      tags$link(rel="stylesheet", 
+                href="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.min.css", 
+                integrity="sha384-dbVIfZGuN1Yq7/1Ocstc1lUEm+AT+/rCkibIcC/OmWo5f0EA48Vf8CytHzGrSwbQ",
+                crossorigin="anonymous"),
+      HTML('<script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.min.js" integrity="sha384-2BKqo+exmr9su6dir+qCw08N2ZKRucY4PrGQPPWU1A7FtlCGjmEGFqXCv5nyM5Ij" crossorigin="anonymous"></script>'),
+      HTML('<script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"></script>'),
+      HTML('
     <script>
       document.addEventListener("DOMContentLoaded", function(){
         renderMathInElement(document.body, {
@@ -27,11 +35,6 @@ ui <- navbarPage(
       })
     </script>')
     ),
-    title ="Bounding bias due to selection",          
-  id = "navbar",
-  theme = shinytheme("yeti"),
-  tabPanel(
-    "Selection Bias",
     mainPanel(
 
       # TO FIX
@@ -187,12 +190,19 @@ ui <- navbarPage(
                                         using the R package <a href='https://cran.r-project.org/web/packages/EValue/index.html'>EValue</a>.",
       "<br><br><b>Additional references</b>",
       "<br><br>Evalues also available here"
-    )))
+    )),
+    textOutput("keep_alive")
+    )
   )
 )
 
 server <- function(input, output, session) {
-    
+
+  output$keep_alive <- renderText({
+    req(input$alive_count)
+    input$alive_count
+  })
+  
   svals <- reactive({
       validate(
           need(!is.na(input$est_S), "Please enter a point estimate")
