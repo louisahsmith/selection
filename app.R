@@ -1,6 +1,6 @@
 library(shiny)
-library(EValue)
 library(shinythemes)
+source("svalue_source.R")
 
 options(shiny.sanitize.errors = FALSE)
 
