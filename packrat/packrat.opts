@@ -6,12 +6,7 @@ vcs.ignore.src: FALSE
 external.packages: 
 local.repos: 
 load.external.packages.on.startup: TRUE
-ignored.packages:
-    Matrix
-    nlme
-    mgcv
-    survival
-    git2r
+ignored.packages: 
 ignored.directories:
     data
     inst
