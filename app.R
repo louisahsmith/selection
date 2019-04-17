@@ -6,15 +6,15 @@ library(bsplus)
 options(shiny.sanitize.errors = FALSE)
 source("setup.R")
 
-#### UI component ----------------------------------------------------
+#### UI component --------------------------------------------------
 ui <- navbarPage(
-  title = "Bounding bias due to selection",
+  title = "Simple sensitivity analysis for selection bias",
   id = "navbar",
   theme = shinytheme("yeti"),
   
   #### intro tab -----------------------------------------------------
   tabPanel(
-    title = "Selection bias",
+    title = "Introduction",
 
     # prevent page from greying out after 10 seconds
     tags$script(src = "keep_alive.js"),
@@ -35,7 +35,7 @@ ui <- navbarPage(
       HTML('<script> document.addEventListener("DOMContentLoaded", function(){
         renderMathInElement(document.body, { delimiters: [{left: "$", right: "$", display: false}]
         }); })</script>'),
-      # Google analytics
+      # Google analytics 
       HTML('<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112795291-2"></script>
       <script> 
         window.dataLayer = window.dataLayer || [];
@@ -51,17 +51,17 @@ ui <- navbarPage(
     mainPanel(
       # info about selection bias
       includeMarkdown("content/intro.md"),
-      width = 6
+      width = 8
     ),
 
     # info about citation
     sidebarPanel(
       includeMarkdown("content/intro_side.md"),
-      width = 6
+      width = 4
     )
   ), # end opening panel
 
-  #### compute bound tab -----------------------------------------------
+  #### compute bound tab ------------------------------------------------
   tabPanel(
     title = "Compute bound",
     mainPanel(
@@ -75,8 +75,8 @@ ui <- navbarPage(
         "outcomeType_B",
         label = "Outcome type",
         choices = c(
-          "Risk / rate ratio" = "RR",
-          "Risk / rate difference" = "RD"
+          "Risk ratio" = "RR",
+          "Risk difference" = "RD"
         )
       ),
       checkboxGroupInput(
@@ -95,16 +95,14 @@ ui <- navbarPage(
       # extra inputs for risk difference
       conditionalPanel(
         condition = "input.outcomeType_B == 'RD'",
-        numericInput("pY_S1_A1", "Risk in selected exposed: P(Y = 1 | A = 1, S = 1)",
+        splitLayout(
+        numericInput("pY_S1_A1", HTML("Risk in selected exposed:<br>$P(Y = 1 \\mid A = 1, S = 1)$"),
           value = NA, min = 0, max = 1, step = 0.1
+        ),
+        numericInput("pY_S1_A0", HTML("Risk in selected unexposed:<br>$P(Y = 1 \\mid A = 0, S = 1)$"),
+                     value = NA, min = 0, max = 1, step = 0.1
         )
-      ),
-      conditionalPanel(
-        condition = "input.outcomeType_B == 'RD'",
-        numericInput("pY_S1_A0", "Risk in selected unexposed: P(Y = 1 | A = 0, S = 1)",
-          value = NA, min = 0, max = 1, step = 0.1
-        )
-      ),
+      )),
       # conditional panels for all of the various possible assumptions
       HTML("<label class='control-label'>Estimated/hypothesized values for parameters</label>"),
       conditionalPanel(
@@ -174,14 +172,14 @@ ui <- navbarPage(
       width = 6
     ), # ends computation input/output panel
 
-    # panel for explaining how to calculate a bound
+    # panel for explaining how to calculate a bound 
     sidebarPanel(
       includeMarkdown("content/bound_side.md"),
       width = 6
     ) # end explanation sidebar
   ), # end direct computation of bounds tab
 
-  #### selection e-value tab -------------------------------------------
+  #### selection e-value tab ------------------------------------------
   tabPanel(
     title = "E-values for selection bias",
     mainPanel(
@@ -191,11 +189,17 @@ ui <- navbarPage(
         body = includeMarkdown("content/assumptions.md"),
         size = "medium"
       ),
+      bs_modal(
+        id = "modal_parameters_S",
+        title = "Parameter definitions",
+        body = includeMarkdown("content/parameters.md"),
+        size = "medium"
+      ),
       splitLayout(
         selectInput("outcomeType_S",
           label = "Outcome type",
           choices = c(
-            "Risk / rate ratio" = "RR",
+            "Risk ratio" = "RR",
             "Odds ratio" = "OR",
             "Hazard ratio" = "HR"
           )

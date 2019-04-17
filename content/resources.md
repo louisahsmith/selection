@@ -10,12 +10,12 @@ You can alternatively compute selection bias E-values as well as other types of 
 
 Sensitivity analysis for unmeasured confounding:
 - [E-value website](https://evalue.hmdc.harvard.edu); [Bias factor website](https://bias-factor.hmdc.harvard.edu)
-- [Ding P, & VanderWeele TJ. (2016). Sensitivity Analysis without assumptions. *Epidemiology*, 27(3), 368-377.](https://journals.lww.com/epidem/Fulltext/2016/05000/Sensitivity_Analysis_Without_Assumptions.11.aspx)
-- [VanderWeele TJ, & Ding P. (2017). Sensitivity analysis in observational research: introducing the E-value. *Annals of Internal Medicine*, 167(4), 268-274.](https://annals.org/aim/article-abstract/2643434/sensitivity-analysis-observational-research-introducing-e-value?doi=10.7326%2fM16-2607)
+- [Ding P & VanderWeele TJ. (2016). Sensitivity Analysis without assumptions. *Epidemiology*, 27(3), 368-377.](https://journals.lww.com/epidem/Fulltext/2016/05000/Sensitivity_Analysis_Without_Assumptions.11.aspx)
+- [VanderWeele TJ & Ding P. (2017). Sensitivity analysis in observational research: introducing the E-value. *Annals of Internal Medicine*, 167(4), 268-274.](https://annals.org/aim/article-abstract/2643434/sensitivity-analysis-observational-research-introducing-e-value?doi=10.7326%2fM16-2607)
 - [Mathur MB, Ding P, Riddell CA, VanderWeele TJ. (2018). Website and R package for computing E-values. *Epidemiology*, 29(5), e45-e47.](https://journals.lww.com/epidem/Fulltext/2018/09000/Web_Site_and_R_Package_for_Computing_E_values.26.aspx)
 
 Sensitivity analysis for unmeasured confounding in mediation analyses:
-- [Ding P, & VanderWeele TJ. (2016). Sharp sensitivity bounds for mediation under unmeasured mediator-outcome confounding. *Biometrika*, 103(2), 483–490.](https://academic.oup.com/biomet/article/103/2/483/1744249?searchresult=1)
+- [Ding P & VanderWeele TJ. (2016). Sharp sensitivity bounds for mediation under unmeasured mediator-outcome confounding. *Biometrika*, 103(2), 483–490.](https://academic.oup.com/biomet/article/103/2/483/1744249?searchresult=1)
 
 Sensitivity analysis for unmeasured confounding in meta-analyses:
 
