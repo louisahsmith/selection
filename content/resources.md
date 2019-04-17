@@ -15,7 +15,7 @@ Sensitivity analysis for unmeasured confounding:
 - [Mathur MB, Ding P, Riddell CA, VanderWeele TJ. (2018). Website and R package for computing E-values. *Epidemiology*, 29(5), e45-e47.](https://journals.lww.com/epidem/Fulltext/2018/09000/Web_Site_and_R_Package_for_Computing_E_values.26.aspx)
 
 Sensitivity analysis for unmeasured confounding in mediation analyses:
-- [Ding P & VanderWeele TJ. (2016). Sharp sensitivity bounds for mediation under unmeasured mediator-outcome confounding. *Biometrika*, 103(2), 483–490.](https://academic.oup.com/biomet/article/103/2/483/1744249?searchresult=1)
+- [Ding P & VanderWeele TJ. (2016). Sharp sensitivity bounds for mediation under unmeasured mediator-outcome confounding. *Biometrika*, 103(2), 483-490.](https://academic.oup.com/biomet/article/103/2/483/1744249?searchresult=1)
 
 Sensitivity analysis for unmeasured confounding in meta-analyses:
 
