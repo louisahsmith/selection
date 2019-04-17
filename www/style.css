@@ -1,3 +1,44 @@
 #keep_alive {
   visibility: hidden;
 }
+
+body {
+  font-weight: 350;
+  letter-spacing: 0.005em;
+}
+
+label, .control-label, .help-block, .checkbox, .radio {
+  font-size: 14px;
+  font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-weight: 475;
+  line-height: 1.2;
+  margin-bottom: 9.5px;
+}
+
+.radio label, .checkbox label {
+  font-weight: 375;
+}
+
+h1, .h1, h2, .h2, h3, .h3 {
+  margin-top: 10.5px;
+  margin-bottom: 9.5px;
+}
+
+h1, .h1 {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+h2, .h2 {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.katex {
+  font: normal 1.1em KaTeX_Main,Times New Roman,serif;
+  font-style: normal;
+  font-weight: 350;
+  line-height: 1.2;
+  text-indent: 0;
+  text-rendering: auto;
+}

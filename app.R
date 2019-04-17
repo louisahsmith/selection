@@ -1,29 +1,24 @@
 library(shiny)
 library(shinythemes)
 library(EValue)
-# todo: make "this value refers to" text only show up if something is inputted
-# make sure right-side panels are the same width and why are they in a frame???
+library(bsplus)
+
 options(shiny.sanitize.errors = FALSE)
+source("setup.R")
 
-# message to display if non-null true value
-nonnull.mess <- 'Note: You are calculating a "non-null" selection bias value, i.e., a value for the minimum
-                amount of selection bias needed to move the estimate and confidence interval
-                to your specified true value rather than to the null value.'
-
-
+#### UI component ----------------------------------------------------
 ui <- navbarPage(
   title = "Bounding bias due to selection",
   id = "navbar",
   theme = shinytheme("yeti"),
-
+  
+  #### intro tab -----------------------------------------------------
   tabPanel(
-    title = "Selection Bias",
+    title = "Selection bias",
 
     # prevent page from greying out after 10 seconds
     tags$script(src = "keep_alive.js"),
     tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
-
       # workaround to get math in there (can't get inline mathjax to work)
       tags$link(
         rel = "stylesheet",
@@ -36,49 +31,46 @@ ui <- navbarPage(
            crossorigin="anonymous"></script>'),
       HTML('<script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min.js" 
            integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" 
-           crossorigin="anonymous"></script>'),
+           crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>'),
       HTML('<script> document.addEventListener("DOMContentLoaded", function(){
         renderMathInElement(document.body, { delimiters: [{left: "$", right: "$", display: false}]
-        }); })</script>')
-    ),
-
-    # tab to open on
-    mainPanel(
-      # Google Analytics
-      tags$head(HTML('<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112795291-2"></script>
+        }); })</script>'),
+      # Google analytics
+      HTML('<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112795291-2"></script>
       <script> 
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag("js", new Date());
         gtag("config", "UA-112795291-2");
-     </script>')),
-
-      # info about selection bias
-      wellPanel(HTML(paste("<b>What is selection bias?</b>",
-        "Here is information about selection bias.",
-        "Here is more information about selection bias.",
-        sep = "<br/><br/>"
-      ))),
-      width = 8
+     </script>'),
+      # my CSS additions
+      tags$link(rel = "stylesheet", type = "text/css", href = "style.css")
     ),
-    
+
+    # content to open on
+    mainPanel(
+      # info about selection bias
+      includeMarkdown("content/intro.md"),
+      width = 6
+    ),
+
     # info about citation
     sidebarPanel(
-      HTML(paste("<b>This website is based on the following article:</b>",
-        "Smith LH & VanderWeele TJ. (2019). Bounding bias due to selection. 
-        <i>Epidemiology</i>, forthcoming. <a href='https://arxiv.org/abs/1810.13402'>(Pre-print available).</a>",
-        "<b>Bug reports</b>",
-        "Submit any bug reports to: <i>louisa_h_smith [AT] g.harvard [DOT] edu</i> or open
-        an issue on <a href='https://github.com/louisahsmith/selection/issues'>Github</a>.",
-        sep = "<br/><br/>"
-      ))
+      includeMarkdown("content/intro_side.md"),
+      width = 6
     )
   ), # end opening panel
-  
-  # tab for directly computing bounds
+
+  #### compute bound tab -----------------------------------------------
   tabPanel(
     title = "Compute bound",
     mainPanel(
+      bs_modal(
+        id = "modal_assumptions_B",
+        title = "Additional assumptions",
+        body = includeMarkdown("content/assumptions.md"),
+        size = "medium"
+      ),
       selectInput(
         "outcomeType_B",
         label = "Outcome type",
@@ -88,148 +80,310 @@ ui <- navbarPage(
         )
       ),
       checkboxGroupInput(
-        "assump_B", 
-        label = "Additional assumptions (see linked article for details):",
+        "assump_B",
+        label = HTML('<label class="control-label">Additional assumptions</label>
+        <a href="#" data-toggle="modal" data-target="#modal_assumptions_B">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
         choices = c(
-          "Inference only in selected population" = "sel_pop",
           "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
           "Selection associated with increased risk of outcome" = "risk_inc",
-          "Selection associated with decreased risk of outcome" = "risk_dec"
+          "Selection associated with decreased risk of outcome" = "risk_dec",
+          "Inference only in selected population" = "sel_pop"
         )
       ),
-      # conditionalPanel(
-      #     condition = "input.outcomeType_S != 'RR' ",
-      #     checkboxInput("rare", "Outcome prevalence <15%", TRUE)
-      # ),
+      # extra inputs for risk difference
       conditionalPanel(
         condition = "input.outcomeType_B == 'RD'",
-        numericInput("pY_S1_A1", "Risk in selected exposed: P(Y = 1 | A = 1, S = 1)", 
-                     value = NA, min = 0, max = 1, step = 0.1)
+        numericInput("pY_S1_A1", "Risk in selected exposed: P(Y = 1 | A = 1, S = 1)",
+          value = NA, min = 0, max = 1, step = 0.1
+        )
       ),
       conditionalPanel(
         condition = "input.outcomeType_B == 'RD'",
-        numericInput("pY_S1_A0", "Risk in selected unexposed: P(Y = 1 | A = 0, S = 1)", 
-                     value = NA, min = 0, max = 1, step = 0.1)
+        numericInput("pY_S1_A0", "Risk in selected unexposed: P(Y = 1 | A = 0, S = 1)",
+          value = NA, min = 0, max = 1, step = 0.1
+        )
+      ),
+      # conditional panels for all of the various possible assumptions
+      HTML("<label class='control-label'>Estimated/hypothesized values for parameters</label>"),
+      conditionalPanel(
+        condition = "output.sel_pop && !output.S_eq_U && !output.risk_inc && !output.risk_dec",
+        splitLayout(
+          numericInput("RRUYS1", "$\\text{RR}_{UY|S=1}$", NA) %>%
+            shinyInput_label_embed(
+              shiny_iconlink() %>%
+                bs_embed_popover(
+                  title = NA,
+                  content = "Maximum outcome risk ratio comparing two levels of U among the selected",
+                  placement = "top"
+                )
+            ),
+          numericInput("RRAUS1", "$\\text{RR}_{AU|S=1}$", NA) %>%
+            shinyInput_label_embed(
+              shiny_iconlink() %>%
+                bs_embed_popover(
+                  title = NA,
+                  content = "Maximum factor by which exposure increases some value of U among the selected",
+                  placement = "top"
+                )
+            )
+        )
+      ),
+      conditionalPanel(
+        condition = "!output.sel_pop && !output.risk_inc && !output.risk_dec && !output.S_eq_U",
+        splitLayout(
+          RRUY0(1),
+          RRUY1(1),
+          RRSU0(1),
+          RRSU1(1)
+        )
+      ),
+      conditionalPanel(
+        condition = "output.S_eq_U && !output.risk_inc && !output.risk_dec && !output.sel_pop",
+        splitLayout(
+          RRUY0(2),
+          RRUY1(2)
+        )
+      ),
+      conditionalPanel(
+        condition = "output.S_eq_U && output.risk_inc && !output.sel_pop && !output.risk_dec",
+        RRUY1(3)
+      ),
+      conditionalPanel(
+        condition = "output.S_eq_U && output.risk_dec && !output.sel_pop && !output.risk_inc",
+        RRUY0(3)
+      ),
+      conditionalPanel(
+        condition = "output.risk_inc && !output.S_eq_U && !output.sel_pop && !output.risk_dec",
+        splitLayout(
+          RRUY1(4),
+          RRSU1(4)
+        )
+      ),
+      conditionalPanel(
+        condition = "output.risk_dec && !output.S_eq_U && !output.sel_pop && !output.risk_inc",
+        splitLayout(
+          RRUY0(4),
+          RRSU0(4)
+        )
       ),
       
       # display results
-      wellPanel(span(textOutput(("result.text_B")))),
-      uiOutput("message.text_B"),
+      wellPanel(span(uiOutput("result.text_B"))),
       width = 6
     ), # ends computation input/output panel
-    
+
     # panel for explaining how to calculate a bound
     sidebarPanel(
-      wellPanel(HTML(paste("<b>Computing an E-value for selection bias</b>",
-        "Like the E-value for unmeasured confounding, the selection bias E-value describes 
-        the minimum strength of association between several (possibly unmeasured) factors that would be 
-        sufficient to have created enough selection bias to explain away an observed exposure-outcome association.
-        The parameters that the E-value refers to depends on what assumptions an investigator is willing to make,
-        and are printed with the results. See the cited article for exact definitions and for more details.",
-        "<b>Please use the following citation:</b>",
-        "Smith LH & VanderWeele TJ. (2019). Bounding bias due to selection. 
-        <i>Epidemiology</i>, forthcoming. <a href='https://arxiv.org/abs/1810.13402'>(Pre-print available).</a>",
-        sep = "<br/><br/>"
-      ))),
+      includeMarkdown("content/bound_side.md"),
       width = 6
     ) # end explanation sidebar
   ), # end direct computation of bounds tab
-  
-  # tab for computing "e-value"
+
+  #### selection e-value tab -------------------------------------------
   tabPanel(
     title = "E-values for selection bias",
     mainPanel(
-      selectInput("outcomeType_S",
-        label = "Outcome type",
-        choices = c(
-          "Risk / rate ratio" = "RR",
-          "Odds ratio" = "OR",
-          "Hazard ratio" = "HR"
-        )
+      bs_modal(
+        id = "modal_assumptions_S",
+        title = "Additional assumptions",
+        body = includeMarkdown("content/assumptions.md"),
+        size = "medium"
+      ),
+      splitLayout(
+        selectInput("outcomeType_S",
+          label = "Outcome type",
+          choices = c(
+            "Risk / rate ratio" = "RR",
+            "Odds ratio" = "OR",
+            "Hazard ratio" = "HR"
+          )
+        ),
+        numericInput("est_S", "Point estimate", NA, min = 0)
       ),
       conditionalPanel(
         condition = "input.outcomeType_S != 'RR' ",
         checkboxInput("rare", "Outcome prevalence <15%", TRUE)
       ),
-      numericInput("est_S", "Point estimate", NA, min = 0),
-      numericInput("lo_S", "Confidence interval lower limit", NA, min = 0),
-      numericInput("hi_S", "Confidence interval upper limit", NA, min = 0),
+      splitLayout(
+        numericInput("lo_S", "CI lower limit (optional)", NA, min = 0),
+        numericInput("hi_S", "CI upper limit (optional)", NA, min = 0)
+      ),
       numericInput("true_S", "True causal effect to which to shift estimate", 1, min = 0),
 
       checkboxGroupInput(
-        "assump_S", 
-        label = "Additional assumptions (see linked article for details):",
+        "assump_S",
+        label = HTML('<label class="control-label">Additional assumptions</label>
+        <a href="#" data-toggle="modal" data-target="#modal_assumptions_S">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
         choices = c(
-          "Inference only in selected population" = "sel_pop",
           "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
           "Selection associated with increased risk of outcome" = "risk_inc",
-          "Selection associated with decreased risk of outcome" = "risk_dec"
+          "Selection associated with decreased risk of outcome" = "risk_dec",
+          "Inference only in selected population" = "sel_pop"
         )
       ),
-      
+
       # display results
       wellPanel(span(textOutput(("result.text_S")))),
       uiOutput("message.text_S"),
-      
-      # warnings if computing non-null E-value
-      # note: because the condition is in Javascript, have to use period instead of dollar sign to
-      #  access arguments, so CANNOT have period in the variable names (e.g., "true.RR" doesn't work!)
-      conditionalPanel(condition = "input.true_S != 1", helpText(nonnull.mess)),
       width = 6
     ), # ends panel for input/output of e-value
-    
+
     # panel for info
     sidebarPanel(
-      wellPanel(HTML(paste("<b>Computing an E-value for selection bias</b>",
-        "Like the E-value for unmeasured confounding, the selection bias E-value describes 
-        the minimum strength of association between several (possibly unmeasured) factors that would be 
-        sufficient to have created enough selection bias to explain away an observed exposure-outcome association.
-        The parameters that the E-value refers to depends on what assumptions an investigator is willing to make,
-        and are printed with the results. See the cited article for exact definitions and for more details.",
-        "<b>Please use the following citation:</b>",
-        "Smith LH & VanderWeele TJ. (2019). Bounding bias due to selection. 
-        <i>Epidemiology</i>, forthcoming. <a href='https://arxiv.org/abs/1810.13402'>(Pre-print available).</a>",
-        sep = "<br/><br/>"
-      ))),
+      includeMarkdown("content/evalue_side.md"),
       width = 6
     ) # end e-value explanation sidebar
   ), # end tab for computing e-values
-  
-  # tab for additional resources
+
+  #### additional resources tab ----------------------------------------
   tabPanel(
     "More resources",
     mainPanel(
-      HTML(paste(
-        "<b>Developers</b>",
-        "<br><br>This website was created by <a href='https://www.louisahsmith.com'>Louisa H. Smith</a> and
-        inspired by the <a href = 'https://evalue.hmdc.harvard.edu'>E-values website</a> by
-        <a href='https://profiles.stanford.edu/maya-mathur'>Maya Mathur</a>,
-        <a href='https://sites.google.com/site/pengdingpku/'>Peng Ding</a>, 
-        <a href='https://sph.berkeley.edu/corinne-riddell-phd'>Corinne Riddell</a>, 
-        and <a href='https://www.hsph.harvard.edu/tyler-vanderweele/tools-and-tutorials/'>Tyler VanderWeele</a>.",
-        
-        "<br><br><b>Other software</b>",
-        "<br><br>You can alternatively compute E-values
-        using the R package <a href='https://cran.r-project.org/web/packages/EValue/index.html'>EValue</a>.",
-        
-        "<br><br><b>Additional references</b>",
-        "<br><br>Evalues also available here"
-      )),
-      
+      includeMarkdown("content/resources.md"),
+
       # hide the text for keeping page from greying out (so doesn't create extra blank space)
       textOutput("keep_alive")
     )
-  )
+  ),
+  use_bs_popover()
 )
 
+#### server component ------------------------------------------------
 server <- function(input, output, session) {
   # what will be blank text to prevent page grey-out
   output$keep_alive <- renderText({
     req(input$alive_count)
     input$alive_count
   })
+  
+  #### compute bound tab -----------------------------------------------
+  # need these to choose conditionally which parameter boxes to show
+  output$sel_pop <- reactive({
+    "sel_pop" %in% input$assump_B
+  })
+  output$S_eq_U <- reactive({
+    "S_eq_U" %in% input$assump_B
+  })
+  output$risk_inc <- reactive({
+    "risk_inc" %in% input$assump_B
+  })
+  output$risk_dec <- reactive({
+    "risk_dec" %in% input$assump_B
+  })
 
-  # unput/output for calculating e-values
+  outputOptions(output, "sel_pop", suspendWhenHidden = FALSE)
+  outputOptions(output, "S_eq_U", suspendWhenHidden = FALSE)
+  outputOptions(output, "risk_inc", suspendWhenHidden = FALSE)
+  outputOptions(output, "risk_dec", suspendWhenHidden = FALSE)
+
+  # compute bound computation
+  bounds <- reactive({
+    sel_pop <- "sel_pop" %in% input$assump_B
+    S_eq_U <- "S_eq_U" %in% input$assump_B
+    risk_inc <- "risk_inc" %in% input$assump_B
+    risk_dec <- "risk_dec" %in% input$assump_B
+
+    validate(
+      need(
+        !all(c("risk_inc", "risk_dec") %in% input$assump_B) &
+          !all(c("sel_pop", "risk_inc") %in% input$assump_B) &
+          !all(c("sel_pop", "risk_dec") %in% input$assump_B) &
+          !all(c("sel_pop", "S_eq_U") %in% input$assump_B),
+        "You have unnecessary and/or incompatible assumptions"
+      )
+    )
+
+    validate(
+      need(
+        !anyNA(c(input$RRAUS1, input$RRUYS1)) |
+          !anyNA(c(input$RRUY01, input$RRSU01, input$RRUY11, input$RRSU11)) |
+          !anyNA(c(input$RRUY02, input$RRUY12)) |
+          !is.na(input$RRUY13) | !is.na(input$RRUY03) |
+          !anyNA(c(input$RRUY14, input$RRSU14)) |
+          !anyNA(c(input$RRUY04, input$RRSU04)),
+        "Please enter values for the parameters above"
+      )
+    )
+    if (input$outcomeType_B == "RR") {
+      if (sel_pop) {
+        return(BF(input$RRAUS1, input$RRUYS1))
+      }
+      if (!S_eq_U & !risk_inc & !risk_dec) {
+        return(BF(input$RRUY01, input$RRSU01) * BF(input$RRUY11, input$RRSU11))
+      }
+      if (S_eq_U & !risk_inc & !risk_dec) {
+        return(input$RRUY02 * input$RRUY12)
+      }
+      if (S_eq_U & risk_inc) {
+        return(input$RRUY13)
+      }
+      if (S_eq_U & risk_dec) {
+        return(input$RRUY03)
+      }
+      if (risk_inc) {
+        return(BF(input$RRUY14, input$RRSU14))
+      }
+      if (risk_dec) {
+        return(BF(input$RRUY04, input$RRSU04))
+      }
+    }
+    if (input$outcomeType_B == "RD") {
+      if (sel_pop) {
+        bf <- BF(input$RRAUS1, input$RRUYS1)
+        return(max(c(
+          input$pY_S1_A0 * bf,
+          input$pY_S1_A1 * (1 - 1 / bf)
+        )))
+      }
+      if (!S_eq_U & !risk_inc & !risk_dec) {
+        bf0 <- BF(input$RRUY01, input$RRSU01)
+        bf1 <- BF(input$RRUY11, input$RRSU11)
+        return(bf1 - input$pY_S1_A1 / bf1 + input$pY_S1_A0 * bf0)
+      }
+      if (S_eq_U & !risk_inc & !risk_dec) {
+        return(input$RRUY12 -
+          input$pY_S1_A1 / input$RRUY12 +
+          input$pY_S1_A0 * input$RRUY02)
+      }
+      if (S_eq_U & risk_inc) {
+        return(input$RRUY13 - input$pY_S1_A1 / input$RRUY13)
+      }
+      # CHECK THESE
+      if (S_eq_U & risk_dec) {
+        return(input$RRUY03 - input$pY_S1_A0 / input$RRUY03)
+      }
+      if (risk_inc) {
+        bf <- BF(input$RRUY14, input$RRSU14)
+        return(bf - input$pY_S1_A1 / bf)
+      }
+      if (risk_dec) {
+        bf <- BF(input$RRUY04, input$RRSU04)
+        return(bf - input$pY_S1_A0 / bf)
+      }
+    }
+  })
+
+  # compute bound result
+  output$result.text_B <- renderUI({
+    sepr <- ifelse(input$outcomeType_B == "RR", "/", "-")
+    b <- paste0(
+      "$", input$outcomeType_B, "_{true} \\geq ",
+      input$outcomeType_B, "_{obs} ", sepr,
+      bounds(), "$"
+    )
+    tagList(
+      paste0("Selection bias bound: ", b),
+      # make sure math is printed
+      tags$script('renderMathInElement(document.getElementById("result.text_B"), 
+                  {delimiters: [{left: "$", right: "$", display: false}]});')
+    )
+  })
+
+  #### selection e-value tab -------------------------------------------
   svals <- reactive({
     validate(
       need(!is.na(input$est_S), "Please enter a point estimate")
@@ -237,6 +391,7 @@ server <- function(input, output, session) {
     validate(
       need(!is.na(input$true_S), "Please enter a value to shift the estimate to")
     )
+
     sval_args <- list(
       est = input$est_S,
       lo = input$lo_S,
@@ -255,6 +410,7 @@ server <- function(input, output, session) {
       OR = svalues.OR,
       HR = svalues.HR
     )
+
     svals <- round(do.call(func, sval_args)[2, ], 2)
 
     return(svals)
@@ -262,6 +418,12 @@ server <- function(input, output, session) {
 
   # message that explains what parameters the selection bias e-value refers to
   mess_S <- reactive({
+    test_svals <- tryCatch(svals(), error = function(e) e, message = function(m) m)
+
+    validate(
+      need(!is.list(test_svals), "")
+    )
+
     sel_pop <- "sel_pop" %in% input$assump_S
     S_eq_U <- "S_eq_U" %in% input$assump_S
     risk_inc <- "risk_inc" %in% input$assump_S
@@ -300,6 +462,7 @@ server <- function(input, output, session) {
     }
   })
 
+  # print the selection bias e-value
   output$result.text_S <- renderText({
     # if there is input for the CI (either lower or upper)
     if (!is.na(svals()[2]) | !is.na(svals()[3])) {
@@ -317,10 +480,12 @@ server <- function(input, output, session) {
     }
     return(result.string_S)
   })
-  
+
   # print message about what parameters e-value refers to
   output$message.text_S <- renderUI({
     m <- mess_S()
+
+    if (!is.na(input$true_S) & input$true_S != 1) m <- paste(m, nonnull.mess, sep = " ")
     tagList(
       helpText(m),
       # make sure math is printed
