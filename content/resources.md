@@ -18,4 +18,5 @@ Sensitivity analysis for unmeasured confounding in mediation analyses:
 - [Ding P & VanderWeele TJ. (2016). Sharp sensitivity bounds for mediation under unmeasured mediator-outcome confounding. *Biometrika*, 103(2), 483-490.](https://academic.oup.com/biomet/article/103/2/483/1744249?searchresult=1)
 
 Sensitivity analysis for unmeasured confounding in meta-analyses:
-
+- [Website](https://mmathur.shinyapps.io/meta_gui_2/)
+- [Mathur MB & VanderWeele TJ. (2019) Sensitivity analysis for unmeasured confounding in meta-analyses. *Journal of the American Statistical Association*.](https://www.tandfonline.com/doi/full/10.1080/01621459.2018.1529598)
