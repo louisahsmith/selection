@@ -377,7 +377,7 @@ server <- function(input, output, session) {
     b <- paste0(
       "$", input$outcomeType_B, "_{true} \\geq ",
       input$outcomeType_B, "_{obs} ", sepr,
-      bounds(), "$"
+      round(bounds(), 2), "$"
     )
     tagList(
       paste0("Selection bias bound: ", b),
