@@ -422,11 +422,6 @@ server <- function(input, output, session) {
 
   # message that explains what parameters the selection bias e-value refers to
   mess_S <- reactive({
-    test_svals <- tryCatch(svals(), error = function(e) e, message = function(m) m)
-
-    validate(
-      need(!is.list(test_svals), "")
-    )
 
     sel_pop <- "sel_pop" %in% input$assump_S
     S_eq_U <- "S_eq_U" %in% input$assump_S
@@ -468,6 +463,7 @@ server <- function(input, output, session) {
 
   # print the selection bias e-value
   output$result.text_S <- renderText({
+    s <- svals()
     # if there is input for the CI (either lower or upper)
     if (!is.na(svals()[2]) | !is.na(svals()[3])) {
       sval.CI <- min(svals(), na.rm = TRUE)
@@ -478,7 +474,7 @@ server <- function(input, output, session) {
       # if user only gave point estimate
     } else {
       result.string_S <- paste("Selection bias E-value for point estimate: ",
-        svals()[1],
+        s[1],
         sep = ""
       )
     }
@@ -493,7 +489,7 @@ server <- function(input, output, session) {
     tagList(
       helpText(m),
       # make sure math is printed
-      tags$script('renderMathInElement(document.getElementById("message.text_S"), 
+      tags$script('renderMathInElement(document.getElementById("message.text_S"),
                   {delimiters: [{left: "$", right: "$", display: false}]});')
     )
   })
