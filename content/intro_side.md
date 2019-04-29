@@ -2,7 +2,7 @@
 
 This website is based on the following article:
 
-Smith LH & VanderWeele TJ. (2019). Bounding bias due to selection. *Epidemiology*, forthcoming. [(Pre-print available.)](https://arxiv.org/abs/1810.13402)
+Smith LH, VanderWeele TJ. Bounding bias due to selection. *Epidemiology*. 2019;Publish Ahead of Print. [doi:10.1097/EDE.0000000000001032](https://doi.org/10.1097/EDE.0000000000001032).
 
 # Bug reports
 
