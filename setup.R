@@ -5,7 +5,7 @@ nonnull.mess <- 'Note: You are calculating a "non-null" selection bias E-value, 
 
 # various functions
 BF <- function(RR1, RR2) {
-  (RR1 * RR2) / (RR1 * RR2 - 1)
+  (RR1 * RR2) / (RR1 + RR2 - 1)
 }
 
 RRUY0 <- function(num) {
