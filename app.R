@@ -87,8 +87,8 @@ ui <- navbarPage(
              </a>'),
         choices = c(
           "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
-          "Selection associated with increased risk of outcome" = "risk_inc",
-          "Selection associated with decreased risk of outcome" = "risk_dec",
+          "Selection always associated with increased risk of outcome in both exposure groups" = "risk_inc",
+          "Selection always associated with decreased risk of outcome in both exposure groups" = "risk_dec",
           "Inference only in selected population" = "sel_pop"
         )
       ),
@@ -224,8 +224,8 @@ ui <- navbarPage(
              </a>'),
         choices = c(
           "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
-          "Selection associated with increased risk of outcome" = "risk_inc",
-          "Selection associated with decreased risk of outcome" = "risk_dec",
+          "Selection always associated with increased risk of outcome in both exposure groups" = "risk_inc",
+          "Selection always associated with decreased risk of outcome in both exposure groups" = "risk_dec",
           "Inference only in selected population" = "sel_pop"
         )
       ),
