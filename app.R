@@ -76,9 +76,26 @@ ui <- navbarPage(
         label = "Outcome type",
         choices = c(
           "Risk ratio" = "RR",
-          "Risk difference" = "RD"
+          "Risk difference" = "RD",
+          "Odds ratio" = "OR"
         )
       ),
+      conditionalPanel(
+        condition = "input.outcomeType_B == 'OR'",
+        p("Bound only available for odds ratio when bias is due to control selection in a case-control study. For other types of selection bias, choose risk ratio or difference."),
+        checkboxGroupInput(
+          "control_sel_assump",
+          label = HTML('<label class="control-label">Additional assumptions</label>
+        <a href="#" data-toggle="modal" data-target="#modal_control_sel_assump">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
+          choices = c(
+            "Selection of cases (but not controls) independent of exposure" = "non_indep"
+          )
+        ),
+      ),
+      conditionalPanel(
+        condition = "input.outcomeType_B == 'RR' | input.outcomeType_B == 'RD'",
       checkboxGroupInput(
         "assump_B",
         label = HTML('<label class="control-label">Additional assumptions</label>
@@ -91,7 +108,7 @@ ui <- navbarPage(
           "Selection always associated with decreased risk of outcome in both exposure groups" = "risk_dec",
           "Inference only in selected population" = "sel_pop"
         )
-      ),
+      )),
       # extra inputs for risk difference
       conditionalPanel(
         condition = "input.outcomeType_B == 'RD'",
@@ -103,6 +120,7 @@ ui <- navbarPage(
                      value = NA, min = 0, max = 1, step = 0.1
         )
       )),
+     
       # conditional panels for all of the various possible assumptions
       HTML("<label class='control-label'>Estimated/hypothesized values for parameters</label>"),
       conditionalPanel(
@@ -128,6 +146,48 @@ ui <- navbarPage(
             )
         )
       ),
+      conditionalPanel( # TODO: the other ones need to disappear when this happens
+        condition = "output.non_indep",
+        splitLayout(
+          # TODO: Fix content in popovers
+          numericInput("RRUA1", "$\\text{RR}_{UA_1}$", NA) %>%
+            shinyInput_label_embed(
+              shiny_iconlink() %>%
+                bs_embed_popover(
+                  title = NA,
+                  content = "Maximum outcome risk ratio comparing two levels of U among the selected",
+                  placement = "top"
+                )
+            ),
+          numericInput("RRS1U", "$\\text{RR}_{S_1U}$", NA) %>%
+            shinyInput_label_embed(
+              shiny_iconlink() %>%
+                bs_embed_popover(
+                  title = NA,
+                  content = "Maximum factor by which exposure increases some value of U among the selected",
+                  placement = "top"
+                )
+            ),
+          numericInput("RRUA0", "$\\text{RR}_{UA_0}$", NA) %>%
+            shinyInput_label_embed(
+              shiny_iconlink() %>%
+                bs_embed_popover(
+                  title = NA,
+                  content = "Maximum factor by which exposure increases some value of U among the selected",
+                  placement = "top"
+                )
+            ),
+          numericInput("RRS0U", "$\\text{RR}_{S_0U}$", NA) %>%
+            shinyInput_label_embed(
+              shiny_iconlink() %>%
+                bs_embed_popover(
+                  title = NA,
+                  content = "Maximum factor by which exposure increases some value of U among the selected",
+                  placement = "top"
+                )
+            )
+        )
+      ), # end conditional panel for control selection
       conditionalPanel(
         condition = "!output.sel_pop && !output.risk_inc && !output.risk_dec && !output.S_eq_U",
         splitLayout(
@@ -184,6 +244,12 @@ ui <- navbarPage(
     title = "E-values for selection bias",
     mainPanel(
       bs_modal(
+        id = "modal_control_sel_assump",
+        title = "Additional assumptions",
+        body = includeMarkdown("content/control_sel.md"), #TODO: write
+        size = "medium"
+      ),
+      bs_modal(
         id = "modal_assumptions_S",
         title = "Additional assumptions",
         body = includeMarkdown("content/assumptions.md"),
@@ -192,7 +258,7 @@ ui <- navbarPage(
       bs_modal(
         id = "modal_parameters_S",
         title = "Parameter definitions",
-        body = includeMarkdown("content/parameters.md"),
+        body = includeMarkdown("content/parameters.md"), #TODO: ADD control selection params
         size = "medium"
       ),
       splitLayout(
@@ -266,6 +332,9 @@ server <- function(input, output, session) {
   
   #### compute bound tab -----------------------------------------------
   # need these to choose conditionally which parameter boxes to show
+  output$non_indep <- reactive({
+    "non_indep" %in% input$control_sel_assump
+  })
   output$sel_pop <- reactive({
     "sel_pop" %in% input$assump_B
   })
@@ -278,7 +347,8 @@ server <- function(input, output, session) {
   output$risk_dec <- reactive({
     "risk_dec" %in% input$assump_B
   })
-
+  
+  outputOptions(output, "non_indep", suspendWhenHidden = FALSE)
   outputOptions(output, "sel_pop", suspendWhenHidden = FALSE)
   outputOptions(output, "S_eq_U", suspendWhenHidden = FALSE)
   outputOptions(output, "risk_inc", suspendWhenHidden = FALSE)
@@ -286,6 +356,7 @@ server <- function(input, output, session) {
 
   # compute bound computation
   bounds <- reactive({
+    non_indep <- "non_indep" %in% input$non_indep
     sel_pop <- "sel_pop" %in% input$assump_B
     S_eq_U <- "S_eq_U" %in% input$assump_B
     risk_inc <- "risk_inc" %in% input$assump_B
@@ -303,6 +374,7 @@ server <- function(input, output, session) {
 
     validate(
       need(
+        !anyNA(c(input$RRUA1, input$RRS0U, input$RRUA0, input$RRS1U)) |
         !anyNA(c(input$RRAUS1, input$RRUYS1)) |
           !anyNA(c(input$RRUY01, input$RRSU01, input$RRUY11, input$RRSU11)) |
           !anyNA(c(input$RRUY02, input$RRUY12)) |
@@ -312,6 +384,9 @@ server <- function(input, output, session) {
         "Please enter values for the parameters above"
       )
     )
+    if (input$outcomeType_B == "OR") {
+      return(BF(input$RRUA1, input$RRS0U) * BF(input$RRUA0, input$RRS1U))
+    }
     if (input$outcomeType_B == "RR") {
       if (sel_pop) {
         return(BF(input$RRAUS1, input$RRUYS1))
@@ -373,7 +448,7 @@ server <- function(input, output, session) {
 
   # compute bound result
   output$result.text_B <- renderUI({
-    sepr <- ifelse(input$outcomeType_B == "RR", "/", "-")
+    sepr <- ifelse(input$outcomeType_B %in% c("RR", "OR"), "/", "-")
     b <- paste0(
       "$", input$outcomeType_B, "_{true} \\geq ",
       input$outcomeType_B, "_{obs} ", sepr,
