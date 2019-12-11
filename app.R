@@ -259,7 +259,6 @@ ui <- navbarPage(
         )),
       
       # conditional panels for all of the various possible assumptions
-      
       conditionalPanel(
         condition = "input.outcomeType_B != 'OR' && input.pop_group != 'sel_pop' && !output.risk_inc && !output.risk_dec && !output.S_eq_U",
         splitLayout(
@@ -404,15 +403,6 @@ server <- function(input, output, session) {
   
   #### compute bound tab -----------------------------------------------
   # need these to choose conditionally which parameter boxes to show
-  output$control_assump <- reactive({
-    all(c("case_indep", "control_indep", "no_confound") %in% input$control_sel_assump)
-  })
-  output$sel_pop_assump <- reactive({
-    all(c("U_indep", "no_confound") %in% input$sel_pop_assump) 
-  })
-  output$whole_pop_assump <- reactive({
-    all(c("U_indep", "no_confound") %in% input$whole_pop_assump) 
-  })
   output$S_eq_U <- reactive({
     "S_eq_U" %in% input$assump_B
   })
@@ -423,41 +413,17 @@ server <- function(input, output, session) {
     "risk_dec" %in% input$assump_B
   })
   
-  outputOptions(output, "control_assump", suspendWhenHidden = FALSE)
-  outputOptions(output, "sel_pop_assump", suspendWhenHidden = FALSE)
-  outputOptions(output, "whole_pop_assump", suspendWhenHidden = FALSE)
   outputOptions(output, "S_eq_U", suspendWhenHidden = FALSE)
   outputOptions(output, "risk_inc", suspendWhenHidden = FALSE)
   outputOptions(output, "risk_dec", suspendWhenHidden = FALSE)
-
+  
   # compute bound computation
   bounds <- reactive({
-    control_assump <- all(c("case_indep", "control_indep", "no_confound") %in% input$control_sel_assump)
-    sel_pop_assump <- all(c("U_indep", "no_confound") %in% input$sel_pop_assump)
-    whole_pop_assump <- all(c("U_indep", "no_confound") %in% input$whole_pop_assump)
+
     S_eq_U <- "S_eq_U" %in% input$assump_B
     risk_inc <- "risk_inc" %in% input$assump_B
     risk_dec <- "risk_dec" %in% input$assump_B
-    validate(
-      need(
-        !(all(c("risk_inc", "risk_dec") %in% input$assump_B) & whole_pop_assump) |
-          sel_pop_assump | control_assump,
-        "You have missing or incompatible assumptions"
-      )
-    )
     
-    validate(
-      need(
-        !anyNA(c(input$RRUA1, input$RRS0U, input$RRUA0, input$RRS1U)) |
-          !anyNA(c(input$RRAUS1, input$RRUYS1)) |
-          !anyNA(c(input$RRUY01, input$RRSU01, input$RRUY11, input$RRSU11)) |
-          !anyNA(c(input$RRUY02, input$RRUY12)) |
-          !is.na(input$RRUY13) | !is.na(input$RRUY03) |
-          !anyNA(c(input$RRUY14, input$RRSU14)) |
-          !anyNA(c(input$RRUY04, input$RRSU04)),
-        "Please enter values for the parameters above"
-      )
-    )
     if (input$outcomeType_B == "OR") {
       return(BF(input$RRUA1, input$RRS0U) * BF(input$RRUA0, input$RRS1U))
     }
@@ -522,6 +488,32 @@ server <- function(input, output, session) {
   
   # compute bound result
   output$result.text_B <- renderUI({
+    validate(
+      need(
+        (!all(c("risk_inc", "risk_dec") %in% input$assump_B) & 
+           all(c("U_indep", "no_confound") %in% input$whole_pop_assump)) &
+          all(c("U_indep", "no_confound") %in% input$sel_pop_assump) & 
+          all(c("case_indep", "control_indep", "no_confound") %in% input$control_sel_assump),
+        "You have missing or incompatible assumptions"
+      ),
+      need(
+        (!anyNA(c(input$RRUA1, input$RRS0U, input$RRUA0, input$RRS1U)) & input$outcomeType_B == "OR") |
+          (!anyNA(c(input$RRAUS1, input$RRUYS1)) & input$pop_group == "sel_pop") |
+          (!anyNA(c(input$RRUY01, input$RRSU01, input$RRUY11, input$RRSU11)) & !"risk_inc" %in% input$assump_B & 
+             !"risk_dec" %in% input$assump_B & !"S_eq_U" %in% input$assump_B) |
+          (!anyNA(c(input$RRUY02, input$RRUY12)) & "S_eq_U" %in% input$assump_B & !"risk_dec" %in% input$assump_B & 
+             !"risk_dec" %in% input$assump_B) |
+          (!is.na(input$RRUY13) & "S_eq_U" %in% input$assump_B & "risk_dec" %in% input$assump_B & 
+             !"risk_dec" %in% input$assump_B) | 
+          (!is.na(input$RRUY03) & "S_eq_U" %in% input$assump_B & !"risk_dec" %in% input$assump_B & 
+             "risk_dec" %in% input$assump_B) |
+          (!anyNA(c(input$RRUY14, input$RRSU14)) & !"S_eq_U" %in% input$assump_B & 
+             "risk_dec" %in% input$assump_B & !"risk_dec" %in% input$assump_B) |
+          (!anyNA(c(input$RRUY04, input$RRSU04)) & !"S_eq_U" %in% input$assump_B & 
+             !"risk_dec" %in% input$assump_B & "risk_dec" %in% input$assump_B),
+        "Please enter values for the parameters above"
+      )
+    )
     sepr <- ifelse(input$outcomeType_B %in% c("RR", "OR"), "/", "-")
     b <- paste0(
       "$", input$outcomeType_B, "_{true} \\geq ",
