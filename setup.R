@@ -55,3 +55,85 @@ RRSU1 <- function(num) {
         )
     )
 }
+
+thresh_sel <- function (x, true = 1, sel_pop = FALSE, S_eq_U = FALSE, risk_inc = FALSE, 
+                        risk_dec = FALSE) {
+  if (is.na(x)) 
+    return(NA)
+  if (x <= 1) {
+    x = 1/x
+    true = 1/true
+  }
+  if (true <= x) {
+    rat = x/true
+  }
+  else if (true > x) {
+    rat = true/x
+  }
+  if (sel_pop) {
+    return(rat + sqrt(rat * (rat - 1)))
+  }
+  if (!S_eq_U & !risk_inc & !risk_dec) {
+    return(sqrt(rat) + sqrt(sqrt(rat) * (sqrt(rat) - 1)))
+  }
+  if (S_eq_U & !risk_inc & !risk_dec) {
+    return(sqrt(rat))
+  }
+  if (S_eq_U & risk_inc) {
+    return(rat)
+  }
+  if (S_eq_U & risk_dec) {
+    return(rat)
+  }
+  if (risk_inc) {
+    return(rat + sqrt(rat * (rat - 1)))
+  }
+  if (risk_dec) {
+    return(rat + sqrt(rat * (rat - 1)))
+  }
+}
+
+svalues <- function(est, lo = NA, hi = NA, true = 1, sel_pop = FALSE, 
+                    S_eq_U = FALSE, risk_inc = FALSE, risk_dec = FALSE) {
+  values = c(est, lo, hi)
+  if (est < 0) 
+    stop("RR cannot be negative")
+  if (true < 0) 
+    stop("True value is impossible")
+  if (risk_inc & risk_dec) 
+    stop("You have made incompatible assumptions about the \n association between selection and risk.")
+  null.CI = NA
+  if (est > true & !is.na(lo)) {
+    null.CI = (lo < true)
+  }
+  if (est < true & !is.na(hi)) {
+    null.CI = (hi > true)
+  }
+  if (!is.na(lo) & !is.na(hi)) {
+    if (lo > hi) 
+      stop("Lower confidence limit should be less than upper confidence limit")
+  }
+  if (!is.na(lo) & est < lo) 
+    stop("Point estimate should be inside confidence interval")
+  if (!is.na(hi) & est > hi) 
+    stop("Point estimate should be inside confidence interval")
+  E = vapply(values, FUN = function(x) thresh_sel(x, true = true, sel_pop = sel_pop, 
+                                                                    S_eq_U = S_eq_U, risk_inc = risk_inc, 
+                                                                    risk_dec = risk_dec),
+                      FUN.VALUE = numeric(1))
+  if (!is.na(null.CI) & null.CI == TRUE) {
+    E[2:3] = 1
+  }
+  if (!is.na(lo) | !is.na(hi)) {
+    if (est > true) 
+      E[3] = NA
+    if (est < true) 
+      E[2] = NA
+    if (est == true) {
+      E[2] = 1
+      E[3] = NA
+    }
+  }
+  result = rbind(values, E)
+  result
+}
