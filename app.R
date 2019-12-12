@@ -1,6 +1,5 @@
 library(shiny)
 library(shinythemes)
-library(EValue)
 library(bsplus)
 
 options(shiny.sanitize.errors = FALSE)
