@@ -11,7 +11,6 @@ ui <- navbarPage(
   title = "Simple sensitivity analysis for selection bias",
   id = "navbar",
   theme = shinytheme("yeti"),
-  
   #### intro tab -----------------------------------------------------
   tabPanel(
     title = "Introduction",
@@ -48,18 +47,31 @@ ui <- navbarPage(
     ),
     
     # content to open on
-    mainPanel(
+    fluidRow(
+      column(8,
       # info about selection bias
-      includeMarkdown("content/intro.md"),
-      width = 8
+      includeMarkdown("content/intro.md")
+      ),
+      column(4,
+             wellPanel(includeMarkdown("content/intro_side.md"))
+      )
+      ),
+    fluidRow(
+      column(12,
+             includeMarkdown("content/notation.md"))
     ),
-    
-    # info about citation
-    sidebarPanel(
-      includeMarkdown("content/intro_side.md"),
-      width = 4
-    )
+    fluidRow(
+      column(10, offset = 1, tabsetPanel(
+      tabPanel("Zika virus and microcephaly", wellPanel(includeMarkdown("content/zika.md"), style = "background: white")),
+      tabPanel("Estrogen and endometrial cancer", wellPanel(includeMarkdown("content/estrogen.md"), style = "background: white")),
+      tabPanel("Body weight and mortality", wellPanel(includeMarkdown("content/obesity.md"), style = "background: white")),
+      tabPanel("Coffee and pancreatic cancer", wellPanel(includeMarkdown("content/coffee.md"), style = "background: white"))
+    ))
+    ),
+    fluidRow(column(12))
+  
   ), # end opening panel
+
   
   #### compute bound tab ------------------------------------------------
   tabPanel(
