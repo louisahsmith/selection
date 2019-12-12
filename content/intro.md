@@ -9,9 +9,9 @@ However, it can be difficult to know the extent to which an estimate of a causal
 
 ## Notation
 
-Throughout, we refer to the exposure of interest as $A$, the outcome as $Y$, and the fact of having been selected into the study as $S$ (equal to 1 for the selected population and 0 for the non-selected). We refer to the factor(s) responsible for the bias (due to their relationships with exposure, outcome, and selection) as $U$.
+Throughout, we refer to the exposure of interest as $A$, the outcome (or case-control status) as $Y$, and the fact of having been selected into the study as $S$ (equal to 1 for the selected population and 0 for the non-selected). We refer to the factor(s) responsible for the bias (due to their relationships with exposure, outcome, and selection) as $U$.
 
-It is assumed throughout that any known and measured confounders have been adjusted for in the analysis. The parameters describing the extent of possible selection bias describe relationships *above and beyond* those factors that have already been included.
+It is assumed throughout that any known and measured confounders $C$ have been adjusted for in the analysis. The parameters describing the extent of possible selection bias describe relationships *above and beyond* those factors that have already been included.
 
 # Examples and graphical depictions
 
@@ -24,3 +24,5 @@ For each of these situations, we can either compute a bound for the possible ext
 - Another question that has been considered is whether exogenous estrogen ($A$) causes endometrial cancer ($Y$). As an attempt to avoid underdetection of cancer, [one study selected](https://www.nejm.org/doi/full/10.1056/NEJM197811162992001?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub%3Dpubmed) only women who had undergone hysterectomy or other diagnostic procedure ($S$). In this case we may consider indication for such a procedure to be $U$. ![](post_outcome.png) Because estrogen can increase the risk of bleeding or other reason for a diagnostic procedure, as can endometrial cancer itself, women could essentially be selected due to having the exposure *or* the outcome. This could make the two appear to be less likely to co-occur together, and [bias the estimate](https://www.jclinepi.com/article/0021-9681%2881%2990002-3/pdf) toward the null.
 
 - The obesity paradox refers to the fact that obesity ($A$) appears to be protective against mortality ($Y$) compared to the normal weight BMI category among people with heart failure or other conditions ($S$). ![](CDE.png) However, it has been argued that this relationship is due to common causes of heart disease and death ($U$). Because obesity is known to increase the risk of heart disease as well, it could appear among the population with that condition that obesity increases survival: many of the non-obese people with heart disease have another condition that puts them at a higher risk of death.
+
+- TODO: write-up control selection here and pull DAG out

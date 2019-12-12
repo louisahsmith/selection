@@ -1,3 +1,5 @@
+TODO: I'm not sure this is necessary? Just add control selection to the other one?
+
 With no additional assumptions, the computed bound will be for general selection bias (Result 1 in the [text](https://arxiv.org/abs/1810.13402)). The options correspond to the additional results. 
 
 *Unmeasured factor a defining characteristic of selection*

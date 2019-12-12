@@ -6,6 +6,8 @@ library(bsplus)
 options(shiny.sanitize.errors = FALSE)
 source("setup.R")
 
+# TODO: ADD warning about risk difference scale
+
 #### UI component --------------------------------------------------
 ui <- navbarPage(
   title = "Simple sensitivity analysis for selection bias",
@@ -332,40 +334,110 @@ ui <- navbarPage(
         body = includeMarkdown("content/parameters.md"), #TODO: ADD control selection params
         size = "medium"
       ),
-      splitLayout(
-        selectInput("outcomeType_S",
-                    label = "Outcome type",
-                    choices = c(
-                      "Risk ratio" = "RR",
-                      "Odds ratio" = "OR",
-                      "Hazard ratio" = "HR"
-                    )
-        ),
-        numericInput("est_S", "Point estimate", NA, min = 0)
-      ),
+      
+      selectInput(
+        "outcomeType_S",
+        label = "Outcome type",
+        choices = c(
+          "Risk ratio" = "RR",
+          "Odds ratio" = "OR"
+        )
+      ), 
+      
+      # if they choose OR there's only one option
       conditionalPanel(
-        condition = "input.outcomeType_S != 'RR' ",
-        checkboxInput("rare", "Outcome prevalence <15%", TRUE)
+        condition = "input.outcomeType_S == 'OR'",
+        p("Bound only available for odds ratio when bias is due to control selection in a case-control study. 
+          For other types of selection bias, choose risk ratio or difference."),
+        checkboxGroupInput(
+          "control_sel_assump_S",
+          label = HTML('<label class="control-label">Necessary assumptions</label>
+        <a href="#" data-toggle="modal" data-target="#modal_control_sel_assump">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
+          choices = c(
+            "No unmeasured confounding \\({(Y^a \\amalg A \\mid C)}\\)" = "no_confound",
+            "Selection of cases independent of exposure \\({(S \\amalg A \\mid Y = 1, C )}\\)" = "case_indep",
+            "Selection of controls independent of exposure, conditional on some possibly unmeasured factor(s) 
+            \\(U\\) 
+            \\({(S \\amalg A \\mid  Y = 0, U, C)}\\)" = "control_indep"
+          ),
+          selected = c("case_indep", "control_indep", "no_confound")
+        )
+      ), # end conditional panel for control selection
+      
+      # if not OR, what is the target of inference
+      conditionalPanel(
+        condition = "input.outcomeType_S != 'OR'",
+        radioButtons(
+          "pop_group_S",
+          label = HTML('<label class="control-label">Target population</label>
+        <a href="#" data-toggle="modal" data-target="#modal_pop_group">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
+          choices = c(
+            "Entire population" = "whole_pop",
+            "Selected population" = "sel_pop"
+          ),
+          selected = "whole_pop"
+        )
       ),
+      
+      conditionalPanel( # "Inference only in selected population"
+        condition = "input.outcomeType_S != 'OR' && input.pop_group_S == 'sel_pop'",
+        
+        checkboxGroupInput( # TODO: needs modal?
+          "sel_pop_assump_S",
+          label = HTML('<label class="control-label">Necessary assumptions</label>
+        <a href="#" data-toggle="modal" data-target="#modal_sel_pop_assump">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
+          choices = c(
+            "No unmeasured confounding \\({(Y_a \\amalg A \\mid C)}\\)" = "no_confound",
+            "All selection bias is captured by possibly unmeasured factor(s) \\(U\\) \\({(Y_a \\amalg A \\mid S = 1, U, C)}\\)" = 
+              "U_indep"
+          ),
+          selected = c("U_indep", "no_confound")
+        )
+       ), # end selected population option
+      
+      conditionalPanel(
+        condition = "input.outcomeType_S != 'OR' && input.pop_group_S != 'sel_pop'",
+        # TODO: does this need modal?
+        checkboxGroupInput(
+          "whole_pop_assump_S",
+          label = HTML('<label class="control-label">Necessary assumptions</label>
+        <a href="#" data-toggle="modal" data-target="#modal_whole_pop_assump">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
+          choices = c(
+            "No unmeasured confounding \\({(Y_a \\amalg A \\mid C)}\\)" = "no_confound",
+            "Selection is only related to outcome via unmeasured factor(s) \\(U\\) \\({(Y \\amalg S \\mid A, U, C)}\\)" = 
+              "U_indep"
+          ),
+          selected = c("U_indep", "no_confound")
+        ),
+        
+        checkboxGroupInput(
+          "assump_S",
+          label = HTML('<label class="control-label">Additional assumptions</label>
+        <a href="#" data-toggle="modal" data-target="#modal_assumptions_B">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
+          choices = c(
+            "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
+            "Selection always associated with increased risk of outcome in both exposure groups" = "risk_inc",
+            "Selection always associated with decreased risk of outcome in both exposure groups" = "risk_dec"
+          )
+        )
+      ),
+      
+      numericInput("est_S", "Point estimate", NA, min = 0),
       splitLayout(
         numericInput("lo_S", "CI lower limit (optional)", NA, min = 0),
         numericInput("hi_S", "CI upper limit (optional)", NA, min = 0)
       ),
       numericInput("true_S", "True causal effect to which to shift estimate", 1, min = 0),
-      
-      checkboxGroupInput(
-        "assump_S",
-        label = HTML('<label class="control-label">Additional assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_assumptions_S">
-             <i class="fa fa-info-circle"></i>
-             </a>'),
-        choices = c(
-          "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
-          "Selection always associated with increased risk of outcome in both exposure groups" = "risk_inc",
-          "Selection always associated with decreased risk of outcome in both exposure groups" = "risk_dec",
-          "Inference only in selected population" = "sel_pop"
-        )
-      ),
       
       # display results
       wellPanel(span(textOutput(("result.text_S")))),
@@ -531,9 +603,14 @@ server <- function(input, output, session) {
   #### selection e-value tab -------------------------------------------
   svals <- reactive({
     validate(
-      need(!is.na(input$est_S), "Please enter a point estimate")
-    )
-    validate(
+      need(!is.na(input$est_S), "Please enter a point estimate"),
+      need(
+        (!all(c("risk_inc", "risk_dec") %in% input$assump_S) & 
+           all(c("U_indep", "no_confound") %in% input$whole_pop_assump_S)) &
+          all(c("U_indep", "no_confound") %in% input$sel_pop_assump_S) & 
+          all(c("case_indep", "control_indep", "no_confound") %in% input$control_sel_assump_S),
+        "You have missing or incompatible assumptions"
+      ),
       need(!is.na(input$true_S), "Please enter a value to shift the estimate to")
     )
     
@@ -542,21 +619,17 @@ server <- function(input, output, session) {
       lo = input$lo_S,
       hi = input$hi_S,
       true = input$true_S,
-      sel_pop = ("sel_pop" %in% input$assump_S),
-      S_eq_U = ("S_eq_U" %in% input$assump_S),
-      risk_inc = ("risk_inc" %in% input$assump_S),
-      risk_dec = ("risk_dec" %in% input$assump_S)
+      sel_pop = (input$pop_group_S == 'sel_pop' & 
+        input$outcomeType_S == "RR"),
+      S_eq_U = ("S_eq_U" %in% input$assump_S & 
+                  input$outcomeType_S == "RR"),
+      risk_inc = ("risk_inc" %in% input$assump_S & 
+                    input$outcomeType_S == "RR"),
+      risk_dec = ("risk_dec" %in% input$assump_S & 
+                    input$outcomeType_S == "RR")
     )
     
-    if (input$outcomeType_S != "RR") sval_args$rare <- input$rare
-    
-    func <- switch(input$outcomeType_S,
-                   RR = svalues.RR,
-                   OR = svalues.OR,
-                   HR = svalues.HR
-    )
-    
-    svals <- round(do.call(func, sval_args)[2, ], 2)
+    svals <- round(do.call(svalues, sval_args)[2, ], 2)
     
     return(svals)
   })
@@ -564,10 +637,11 @@ server <- function(input, output, session) {
   # message that explains what parameters the selection bias e-value refers to
   mess_S <- reactive({
     
-    sel_pop <- "sel_pop" %in% input$assump_S
+    sel_pop <- input$pop_group_S == 'sel_pop'
     S_eq_U <- "S_eq_U" %in% input$assump_S
     risk_inc <- "risk_inc" %in% input$assump_S
     risk_dec <- "risk_dec" %in% input$assump_S
+    cont_sel <- input$outcomeType_S == "OR"
     
     m1 <- "This value refers to the minimum value of each of"
     m3 <- "that would explain away your point estimate."
@@ -576,8 +650,12 @@ server <- function(input, output, session) {
       m2 <- "$\\text{RR}_{UY|S=1}$ and $\\text{RR}_{AU|S=1}$"
       return(paste(m1, m2, m3))
     }
-    if (!S_eq_U & !risk_inc & !risk_dec) {
+    if (!S_eq_U & !risk_inc & !risk_dec & !cont_sel) {
       m2 <- "$\\text{RR}_{UY \\mid (A = 0)}$, $\\text{RR}_{UY \\mid (A = 1)}$, $\\text{RR}_{SU \\mid (A = 0)}$, $\\text{RR}_{SU \\mid (A = 1)}$"
+      return(paste(m1, m2, m3))
+    } # TODO: confirm notation
+    if (!S_eq_U & !risk_inc & !risk_dec) {
+      m2 <- "$\\text{RR}_{U_0Y}$, $\\text{RR}_{U_1Y}$, $\\text{RR}_{S_0U}$, $\\text{RR}_{S_1U}$"
       return(paste(m1, m2, m3))
     }
     if (S_eq_U & !risk_inc & !risk_dec) {
