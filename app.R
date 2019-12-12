@@ -6,8 +6,6 @@ library(bsplus)
 options(shiny.sanitize.errors = FALSE)
 source("setup.R")
 
-# TODO: ADD warning about risk difference scale
-
 #### UI component --------------------------------------------------
 ui <- navbarPage(
   title = "Simple sensitivity analysis for selection bias",
@@ -67,12 +65,23 @@ ui <- navbarPage(
   tabPanel(
     title = "Compute bound",
     mainPanel(
-      # this can go anywhere, just proving modal for assumptions
-      # TODO: add other modals??
+      # this can go anywhere, just providing modal for assumptions
+      bs_modal(
+        id = "modal_pop_group_B",
+        title = "Target population",
+        body = includeMarkdown("content/target_pop.md"),
+        size = "medium"
+      ),
       bs_modal(
         id = "modal_assumptions_B",
         title = "Additional assumptions",
         body = includeMarkdown("content/assumptions.md"),
+        size = "medium"
+      ),
+      bs_modal(
+        id = "modal_parameters_B",
+        title = "Parameter definitions",
+        body = includeMarkdown("content/parameters.md"),
         size = "medium"
       ),
       selectInput(
@@ -92,10 +101,7 @@ ui <- navbarPage(
           For other types of selection bias, choose risk ratio or difference."),
         checkboxGroupInput(
           "control_sel_assump",
-          label = HTML('<label class="control-label">Necessary assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_control_sel_assump">
-             <i class="fa fa-info-circle"></i>
-             </a>'),
+          label = "Necessary assumptions",
           choices = c(
             "No unmeasured confounding \\({(Y^a \\amalg A \\mid C)}\\)" = "no_confound",
             "Selection of cases independent of exposure \\({(S \\amalg A \\mid Y = 1, C )}\\)" = "case_indep",
@@ -105,16 +111,18 @@ ui <- navbarPage(
           ),
           selected = c("case_indep", "control_indep", "no_confound")
         ),
-        HTML("<label class='control-label'>Estimated/hypothesized values for parameters</label>"),
+        HTML('<label class="control-label">Estimated/hypothesized values for parameters</label>
+        <a href="#" data-toggle="modal" data-target="#modal_parameters_B">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
         
         splitLayout(
-          # TODO: Fix content in popovers
           numericInput("RRUA1", "$\\text{RR}_{UA_1}$", NA) %>%
             shinyInput_label_embed(
               shiny_iconlink() %>%
                 bs_embed_popover(
                   title = NA,
-                  content = "Maximum outcome risk ratio comparing two levels of U among the selected",
+                  content = "Maximum risk ratio for the exposure comparing two levels of U among the controls",
                   placement = "top"
                 )
             ),
@@ -123,7 +131,7 @@ ui <- navbarPage(
               shiny_iconlink() %>%
                 bs_embed_popover(
                   title = NA,
-                  content = "Maximum factor by which exposure increases some value of U among the selected",
+                  content = "Maximum factor by which some value of U is associated with selection among the controls",
                   placement = "top"
                 )
             ),
@@ -132,7 +140,7 @@ ui <- navbarPage(
               shiny_iconlink() %>%
                 bs_embed_popover(
                   title = NA,
-                  content = "Maximum factor by which exposure increases some value of U among the selected",
+                  content = "Maximum risk ratio for non-exposure comparing two levels of U among the controls",
                   placement = "top"
                 )
             ),
@@ -141,7 +149,7 @@ ui <- navbarPage(
               shiny_iconlink() %>%
                 bs_embed_popover(
                   title = NA,
-                  content = "Maximum factor by which exposure increases some value of U among the selected",
+                  content = "Maximum factor by which some value of U is associated with non-selection among the controls",
                   placement = "top"
                 )
             )
@@ -154,7 +162,7 @@ ui <- navbarPage(
         radioButtons(
           "pop_group",
           label = HTML('<label class="control-label">Target population</label>
-        <a href="#" data-toggle="modal" data-target="#modal_pop_group">
+        <a href="#" data-toggle="modal" data-target="#modal_pop_group_B">
              <i class="fa fa-info-circle"></i>
              </a>'),
           choices = c(
@@ -168,12 +176,9 @@ ui <- navbarPage(
       conditionalPanel( # "Inference only in selected population"
         condition = "input.outcomeType_B != 'OR' && input.pop_group == 'sel_pop'",
         
-        checkboxGroupInput( # TODO: needs modal?
+        checkboxGroupInput(
           "sel_pop_assump",
-          label = HTML('<label class="control-label">Necessary assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_sel_pop_assump">
-             <i class="fa fa-info-circle"></i>
-             </a>'),
+          label = "Necessary assumptions",
           choices = c(
             "No unmeasured confounding \\({(Y_a \\amalg A \\mid C)}\\)" = "no_confound",
             "All selection bias is captured by possibly unmeasured factor(s) \\(U\\) \\({(Y_a \\amalg A \\mid S = 1, U, C)}\\)" = 
@@ -182,7 +187,10 @@ ui <- navbarPage(
           selected = c("U_indep", "no_confound")
         ),
         
-        HTML("<label class='control-label'>Estimated/hypothesized values for parameters</label>"),
+        HTML('<label class="control-label">Estimated/hypothesized values for parameters</label>
+        <a href="#" data-toggle="modal" data-target="#modal_parameters_B">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
         splitLayout(
           numericInput("RRUYS1", "$\\text{RR}_{UY|S=1}$", NA) %>%
             shinyInput_label_embed(
@@ -213,18 +221,16 @@ ui <- navbarPage(
             numericInput("pY_S1_A0_sel", HTML("Risk in selected unexposed:<br>$P(Y = 1 \\mid A = 0, S = 1)$"),
                          value = NA, min = 0, max = 1, step = 0.1
             )
-          ))
+          ),
+          p("Warning: bound for the risk difference is not always informative. Consider using a risk ratio if possible.")
+        )
       ), # end selected population option
       
       conditionalPanel(
         condition = "input.outcomeType_B != 'OR' && input.pop_group != 'sel_pop'",
-        # TODO: does this need modal?
         checkboxGroupInput(
           "whole_pop_assump",
-          label = HTML('<label class="control-label">Necessary assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_whole_pop_assump">
-             <i class="fa fa-info-circle"></i>
-             </a>'),
+          label = "Necessary assumptions",
           choices = c(
             "No unmeasured confounding \\({(Y_a \\amalg A \\mid C)}\\)" = "no_confound",
             "Selection is only related to outcome via unmeasured factor(s) \\(U\\) \\({(Y \\amalg S \\mid A, U, C)}\\)" = 
@@ -246,20 +252,11 @@ ui <- navbarPage(
           )
         ),
       
-      HTML("<label class='control-label'>Estimated/hypothesized values for parameters</label>"),
-      
-      # extra inputs for risk difference
-      conditionalPanel(
-        condition = "input.pop_group != 'sel_pop' && input.outcomeType_B == 'RD'",
-        splitLayout(
-          numericInput("pY_S1_A1_whole", HTML("Risk in selected exposed:<br>$P(Y = 1 \\mid A = 1, S = 1)$"),
-                       value = NA, min = 0, max = 1, step = 0.1
-          ),
-          numericInput("pY_S1_A0_whole", HTML("Risk in selected unexposed:<br>$P(Y = 1 \\mid A = 0, S = 1)$"),
-                       value = NA, min = 0, max = 1, step = 0.1
-          )
-        )),
-      
+      HTML('<label class="control-label">Estimated/hypothesized values for parameters</label>
+        <a href="#" data-toggle="modal" data-target="#modal_parameters_B">
+             <i class="fa fa-info-circle"></i>
+             </a>'),
+
       # conditional panels for all of the various possible assumptions
       conditionalPanel(
         condition = "input.outcomeType_B != 'OR' && input.pop_group != 'sel_pop' && !output.risk_inc && !output.risk_dec && !output.S_eq_U",
@@ -298,8 +295,22 @@ ui <- navbarPage(
           RRUY0(4),
           RRSU0(4)
         )
-      )),
+      ),
       
+      # extra inputs for risk difference
+      conditionalPanel(
+        condition = "input.pop_group != 'sel_pop' && input.outcomeType_B == 'RD'",
+        splitLayout(
+          numericInput("pY_S1_A1_whole", HTML("Risk in selected exposed:<br>$P(Y = 1 \\mid A = 1, S = 1)$"),
+                       value = NA, min = 0, max = 1, step = 0.1
+          ),
+          numericInput("pY_S1_A0_whole", HTML("Risk in selected unexposed:<br>$P(Y = 1 \\mid A = 0, S = 1)$"),
+                       value = NA, min = 0, max = 1, step = 0.1
+          )
+        ),
+        p("Warning: bound for the risk difference is not always informative. Consider using a risk ratio if possible.")
+      ),
+      ),
       # display results
       wellPanel(span(uiOutput("result.text_B"))),
       width = 6
@@ -317,12 +328,6 @@ ui <- navbarPage(
     title = "E-values for selection bias",
     mainPanel(
       bs_modal(
-        id = "modal_control_sel_assump",
-        title = "Additional assumptions",
-        body = includeMarkdown("content/control_sel.md"), #TODO: write
-        size = "medium"
-      ),
-      bs_modal(
         id = "modal_assumptions_S",
         title = "Additional assumptions",
         body = includeMarkdown("content/assumptions.md"),
@@ -331,10 +336,15 @@ ui <- navbarPage(
       bs_modal(
         id = "modal_parameters_S",
         title = "Parameter definitions",
-        body = includeMarkdown("content/parameters.md"), #TODO: ADD control selection params
+        body = includeMarkdown("content/parameters.md"),
         size = "medium"
       ),
-      
+      bs_modal(
+        id = "modal_pop_group_S",
+        title = "Target population",
+        body = includeMarkdown("content/target_pop.md"),
+        size = "medium"
+      ),
       selectInput(
         "outcomeType_S",
         label = "Outcome type",
@@ -351,10 +361,7 @@ ui <- navbarPage(
           For other types of selection bias, choose risk ratio or difference."),
         checkboxGroupInput(
           "control_sel_assump_S",
-          label = HTML('<label class="control-label">Necessary assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_control_sel_assump">
-             <i class="fa fa-info-circle"></i>
-             </a>'),
+          label = "Necessary assumptions",
           choices = c(
             "No unmeasured confounding \\({(Y^a \\amalg A \\mid C)}\\)" = "no_confound",
             "Selection of cases independent of exposure \\({(S \\amalg A \\mid Y = 1, C )}\\)" = "case_indep",
@@ -372,7 +379,7 @@ ui <- navbarPage(
         radioButtons(
           "pop_group_S",
           label = HTML('<label class="control-label">Target population</label>
-        <a href="#" data-toggle="modal" data-target="#modal_pop_group">
+        <a href="#" data-toggle="modal" data-target="#modal_pop_group_S">
              <i class="fa fa-info-circle"></i>
              </a>'),
           choices = c(
@@ -386,12 +393,9 @@ ui <- navbarPage(
       conditionalPanel( # "Inference only in selected population"
         condition = "input.outcomeType_S != 'OR' && input.pop_group_S == 'sel_pop'",
         
-        checkboxGroupInput( # TODO: needs modal?
+        checkboxGroupInput(
           "sel_pop_assump_S",
-          label = HTML('<label class="control-label">Necessary assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_sel_pop_assump">
-             <i class="fa fa-info-circle"></i>
-             </a>'),
+          label = "Necessary assumptions",
           choices = c(
             "No unmeasured confounding \\({(Y_a \\amalg A \\mid C)}\\)" = "no_confound",
             "All selection bias is captured by possibly unmeasured factor(s) \\(U\\) \\({(Y_a \\amalg A \\mid S = 1, U, C)}\\)" = 
@@ -403,13 +407,9 @@ ui <- navbarPage(
       
       conditionalPanel(
         condition = "input.outcomeType_S != 'OR' && input.pop_group_S != 'sel_pop'",
-        # TODO: does this need modal?
         checkboxGroupInput(
           "whole_pop_assump_S",
-          label = HTML('<label class="control-label">Necessary assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_whole_pop_assump">
-             <i class="fa fa-info-circle"></i>
-             </a>'),
+          label = "Necessary assumptions",
           choices = c(
             "No unmeasured confounding \\({(Y_a \\amalg A \\mid C)}\\)" = "no_confound",
             "Selection is only related to outcome via unmeasured factor(s) \\(U\\) \\({(Y \\amalg S \\mid A, U, C)}\\)" = 
@@ -421,7 +421,7 @@ ui <- navbarPage(
         checkboxGroupInput(
           "assump_S",
           label = HTML('<label class="control-label">Additional assumptions</label>
-        <a href="#" data-toggle="modal" data-target="#modal_assumptions_B">
+        <a href="#" data-toggle="modal" data-target="#modal_assumptions_S">
              <i class="fa fa-info-circle"></i>
              </a>'),
           choices = c(
@@ -560,6 +560,7 @@ server <- function(input, output, session) {
   
   # compute bound result
   output$result.text_B <- renderUI({
+    # Provide informative error messages
     validate(
       need(
         (!all(c("risk_inc", "risk_dec") %in% input$assump_B) & 
@@ -602,6 +603,7 @@ server <- function(input, output, session) {
   
   #### selection e-value tab -------------------------------------------
   svals <- reactive({
+    # Provide informative error messages
     validate(
       need(!is.na(input$est_S), "Please enter a point estimate"),
       need(
@@ -628,7 +630,7 @@ server <- function(input, output, session) {
       risk_dec = ("risk_dec" %in% input$assump_S & 
                     input$outcomeType_S == "RR")
     )
-    
+    # doesn't use function from EValue package anymore, but function from setup.R
     svals <- round(do.call(svalues, sval_args)[2, ], 2)
     
     return(svals)
@@ -653,9 +655,9 @@ server <- function(input, output, session) {
     if (!S_eq_U & !risk_inc & !risk_dec & !cont_sel) {
       m2 <- "$\\text{RR}_{UY \\mid (A = 0)}$, $\\text{RR}_{UY \\mid (A = 1)}$, $\\text{RR}_{SU \\mid (A = 0)}$, $\\text{RR}_{SU \\mid (A = 1)}$"
       return(paste(m1, m2, m3))
-    } # TODO: confirm notation
+    }
     if (!S_eq_U & !risk_inc & !risk_dec) {
-      m2 <- "$\\text{RR}_{U_0Y}$, $\\text{RR}_{U_1Y}$, $\\text{RR}_{S_0U}$, $\\text{RR}_{S_1U}$"
+      m2 <- "$\\text{RR}_{UA_1}$, $\\text{RR}_{UA_0}$, $\\text{RR}_{S_1U}$, $\\text{RR}_{S_0U}$"
       return(paste(m1, m2, m3))
     }
     if (S_eq_U & !risk_inc & !risk_dec) {
@@ -706,7 +708,8 @@ server <- function(input, output, session) {
     
     if (!is.na(input$true_S) & input$true_S != 1) m <- paste(m, nonnull.mess, sep = " ")
     tagList(
-      helpText(m),
+      helpText(m, tags$a(href = "#", "data-toggle" = "modal", "data-target" = "#modal_parameters_S",
+                         tags$i(class = "fa fa-info-circle"))),
       # make sure math is printed
       tags$script('renderMathInElement(document.getElementById("message.text_S"),
                   {delimiters: [{left: "$", right: "$", display: false}]});')
