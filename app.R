@@ -1,6 +1,5 @@
 library(shiny)
 library(shinythemes)
-library(EValue)
 library(bsplus)
 
 options(shiny.sanitize.errors = FALSE)
@@ -62,10 +61,10 @@ ui <- navbarPage(
     ),
     fluidRow(
       column(10, offset = 1, tabsetPanel(
-      tabPanel("Zika virus and microcephaly", wellPanel(includeMarkdown("content/zika.md"), style = "background: white")),
-      tabPanel("Estrogen and endometrial cancer", wellPanel(includeMarkdown("content/estrogen.md"), style = "background: white")),
-      tabPanel("Body weight and mortality", wellPanel(includeMarkdown("content/obesity.md"), style = "background: white")),
-      tabPanel("Coffee and pancreatic cancer", wellPanel(includeMarkdown("content/coffee.md"), style = "background: white"))
+      tabPanel("Zika virus & microcephaly", wellPanel(includeMarkdown("content/zika.md"), style = "background: white")),
+      tabPanel("Estrogen & endometrial cancer", wellPanel(includeMarkdown("content/estrogen.md"), style = "background: white")),
+      tabPanel("Body weight & mortality", wellPanel(includeMarkdown("content/obesity.md"), style = "background: white")),
+      tabPanel("Coffee & pancreatic cancer", wellPanel(includeMarkdown("content/coffee.md"), style = "background: white"))
     ))
     ),
     fluidRow(column(12))
@@ -121,7 +120,8 @@ ui <- navbarPage(
             \\(U\\) 
             \\({(S \\amalg A \\mid  Y = 0, U, C)}\\)" = "control_indep"
           ),
-          selected = c("case_indep", "control_indep", "no_confound")
+          selected = c("case_indep", "control_indep", "no_confound"),
+          width = "100%"
         ),
         HTML('<label class="control-label">Estimated/hypothesized values for parameters</label>
         <a href="#" data-toggle="modal" data-target="#modal_parameters_B">
@@ -181,7 +181,8 @@ ui <- navbarPage(
             "Entire population" = "whole_pop",
             "Selected population" = "sel_pop"
           ),
-          selected = "whole_pop"
+          selected = "whole_pop",
+          width = "100%"
         )
       ),
       
@@ -196,7 +197,8 @@ ui <- navbarPage(
             "All selection bias is captured by possibly unmeasured factor(s) \\(U\\) \\({(Y_a \\amalg A \\mid S = 1, U, C)}\\)" = 
             "U_indep"
           ),
-          selected = c("U_indep", "no_confound")
+          selected = c("U_indep", "no_confound"),
+          width = "100%"
         ),
         
         HTML('<label class="control-label">Estimated/hypothesized values for parameters</label>
@@ -248,7 +250,8 @@ ui <- navbarPage(
             "Selection is only related to outcome via unmeasured factor(s) \\(U\\) \\({(Y \\amalg S \\mid A, U, C)}\\)" = 
               "U_indep"
           ),
-          selected = c("U_indep", "no_confound")
+          selected = c("U_indep", "no_confound"),
+          width = "100%"
         ),
         
         checkboxGroupInput(
@@ -261,7 +264,8 @@ ui <- navbarPage(
             "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
             "Selection always associated with increased risk of outcome in both exposure groups" = "risk_inc",
             "Selection always associated with decreased risk of outcome in both exposure groups" = "risk_dec"
-          )
+          ),
+          width = "100%"
         ),
       
       HTML('<label class="control-label">Estimated/hypothesized values for parameters</label>
@@ -381,7 +385,8 @@ ui <- navbarPage(
             \\(U\\) 
             \\({(S \\amalg A \\mid  Y = 0, U, C)}\\)" = "control_indep"
           ),
-          selected = c("case_indep", "control_indep", "no_confound")
+          selected = c("case_indep", "control_indep", "no_confound"),
+          width = "100%"
         )
       ), # end conditional panel for control selection
       
@@ -398,7 +403,8 @@ ui <- navbarPage(
             "Entire population" = "whole_pop",
             "Selected population" = "sel_pop"
           ),
-          selected = "whole_pop"
+          selected = "whole_pop",
+          width = "100%"
         )
       ),
       
@@ -413,7 +419,8 @@ ui <- navbarPage(
             "All selection bias is captured by possibly unmeasured factor(s) \\(U\\) \\({(Y_a \\amalg A \\mid S = 1, U, C)}\\)" = 
               "U_indep"
           ),
-          selected = c("U_indep", "no_confound")
+          selected = c("U_indep", "no_confound"),
+          width = "100%"
         )
        ), # end selected population option
       
@@ -427,7 +434,8 @@ ui <- navbarPage(
             "Selection is only related to outcome via unmeasured factor(s) \\(U\\) \\({(Y \\amalg S \\mid A, U, C)}\\)" = 
               "U_indep"
           ),
-          selected = c("U_indep", "no_confound")
+          selected = c("U_indep", "no_confound"),
+          width = "100%"
         ),
         
         checkboxGroupInput(
@@ -440,7 +448,8 @@ ui <- navbarPage(
             "Unmeasured factor a defining characteristic of selection" = "S_eq_U",
             "Selection always associated with increased risk of outcome in both exposure groups" = "risk_inc",
             "Selection always associated with decreased risk of outcome in both exposure groups" = "risk_dec"
-          )
+          ),
+          width = "100%"
         )
       ),
       
