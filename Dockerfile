@@ -1,1 +1,3 @@
-FROM hmdc/heroku-docker-r:3.6.1-shiny
+FROM virtualstaticvoid/heroku-docker-r:shiny
+ENV PORT=8080
+CMD "/usr/bin/R --no-save -f /app/run.R"
