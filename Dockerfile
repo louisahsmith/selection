@@ -1,6 +1,4 @@
-
-FROM virtualstaticvoid/heroku-docker-r:shiny
-
+FROM hmdc/heroku-docker-r:3.6.1-shiny
 # ONBUILD will copy application files into the container
 #  and execute init.R (if it exists) and restore packrat packages (if they exist)
 

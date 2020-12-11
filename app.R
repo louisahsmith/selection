@@ -365,8 +365,9 @@ ui <- navbarPage(
         "outcomeType_S",
         label = "Outcome type",
         choices = c(
-          "Risk ratio" = "RR",
-          "Odds ratio" = "OR"
+          "Risk ratio" = "RR"
+          # ,
+          # "Odds ratio" = "OR"
         )
       ), 
       
